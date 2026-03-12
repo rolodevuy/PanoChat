@@ -1,0 +1,15 @@
+{
+  "name": "panochat",
+  "version": "1.0.0",
+  "description": "Juego para stream: el chat adivina el pais en Street View",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "socket.io": "^4.7.5",
+    "tmi.js": "^1.8.5",
+    "fastest-levenshtein": "^1.0.16"
+  }
+}

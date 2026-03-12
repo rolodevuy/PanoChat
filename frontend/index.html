@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PanoChat</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f0f0f;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ========== PANTALLA SETUP ========== */
+    #setup-screen {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .setup-box {
+      background: #1a1a2e;
+      border: 2px solid #16213e;
+      border-radius: 16px;
+      padding: 40px 48px;
+      width: 440px;
+      text-align: center;
+    }
+
+    .setup-box h1 {
+      font-size: 2rem;
+      color: #e94560;
+      margin-bottom: 8px;
+    }
+
+    .setup-box .subtitle {
+      color: #666;
+      margin-bottom: 28px;
+      font-size: 0.9rem;
+    }
+
+    .setup-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .setup-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 6px;
+    }
+
+    .setup-group input,
+    .setup-group select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid #16213e;
+      border-radius: 8px;
+      background: #0f0f0f;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .setup-group input:focus,
+    .setup-group select:focus {
+      border-color: #e94560;
+    }
+
+    .setup-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .setup-row .setup-group { flex: 1; }
+
+    #twitch-status {
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      min-height: 20px;
+    }
+
+    #twitch-status.connected { color: #4caf50; }
+    #twitch-status.error { color: #e94560; }
+    #twitch-status.connecting { color: #e9a045; }
+
+    .command-info {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 16px;
+    }
+
+    .command-info code {
+      background: #0f0f0f;
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: #e94560;
+      font-size: 0.9rem;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 8px;
+    }
+
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #btn-connect {
+      background: #6441a5;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    #btn-start-game {
+      background: #e94560;
+      color: #fff;
+    }
+
+    .separator {
+      border: none;
+      border-top: 1px solid #16213e;
+      margin: 20px 0;
+    }
+
+    /* ========== PANTALLA JUEGO ========== */
+    #game-screen {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+    }
+
+    #top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background: #1a1a2e;
+      border-bottom: 2px solid #16213e;
+    }
+
+    #top-bar h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #e94560;
+    }
+
+    #round-info {
+      font-size: 1rem;
+      color: #aaa;
+    }
+
+    #timer {
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #0f3460;
+      background: #e94560;
+      padding: 4px 16px;
+      border-radius: 8px;
+      min-width: 70px;
+      text-align: center;
+    }
+
+    #timer.warning { background: #e9a045; }
+    #timer.danger { animation: pulse 0.5s infinite alternate; }
+
+    @keyframes pulse {
+      from { opacity: 1; }
+      to { opacity: 0.5; }
+    }
+
+    #street-view-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #street-view-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    #map-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 8;
+      display: none;
+    }
+
+    /* Zona de cam del streamer (tapa info de ubicacion de Google) */
+    #cam-blocker {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 60;
+      width: 320px;
+      height: 180px;
+      border-bottom-right-radius: 12px;
+      display: none;
+      overflow: hidden;
+      background: #1a1a2e;
+      border: 2px solid #16213e;
+      border-top: none;
+      border-left: none;
+      box-shadow: inset 0 0 0 6px #1a1a2e, inset 0 0 0 8px rgba(255,255,255,0.12);
+    }
+
+    #cam-blocker .cam-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1rem;
+      font-weight: 700;
+      color: #555;
+      pointer-events: none;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    #bottom-blocker {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 280px;
+      height: 30px;
+      background: #0f0f0f;
+      z-index: 60;
+      display: none;
+    }
+
+    #controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      background: #1a1a2e;
+      border-top: 2px solid #16213e;
+    }
+
+    button {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #btn-skip { background: #e9a045; color: #0f0f0f; }
+    #btn-stop { background: #444; color: #fff; }
+
+    #guesses-count {
+      margin-left: auto;
+      font-size: 0.95rem;
+      color: #aaa;
+    }
+
+    /* Panel de resultados de ronda */
+    #result-panel {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: calc(330px + (100% - 330px) / 2);
+      transform: translate(-50%, -50%);
+      max-width: 650px;
+      width: calc(100% - 500px);
+      background: rgba(15, 15, 15, 0.97);
+      border: 2px solid #e94560;
+      border-radius: 16px;
+      z-index: 100;
+      overflow: hidden;
+    }
+
+    .result-body {
+      display: flex;
+    }
+
+    .result-left {
+      flex: 1;
+      padding: 32px 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .result-right {
+      width: 45%;
+      min-height: 300px;
+      border-left: 2px solid #16213e;
+    }
+
+    .result-right iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    #result-panel h2 {
+      font-size: 1.2rem;
+      color: #aaa;
+      margin-bottom: 8px;
+    }
+
+    #result-country {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #e94560;
+      margin-bottom: 16px;
+    }
+
+    #result-winners { font-size: 1rem; color: #ccc; margin-bottom: 8px; }
+    #result-stats { font-size: 0.9rem; color: #777; margin-bottom: 6px; }
+    #result-next-info { font-size: 0.85rem; color: #555; margin-bottom: 16px; }
+
+    #btn-next-modal {
+      display: none;
+      padding: 10px 32px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: #e94560;
+      color: #fff;
+      transition: opacity 0.2s;
+      align-self: center;
+    }
+    #btn-next-modal:hover { opacity: 0.85; }
+
+    /* Modal de confirmacion para detener */
+    #confirm-overlay {
+      display: none;
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #confirm-overlay.active {
+      display: flex;
+    }
+
+    .confirm-box {
+      background: #1a1a2e;
+      border: 2px solid #e94560;
+      border-radius: 12px;
+      padding: 28px 36px;
+      text-align: center;
+      min-width: 300px;
+    }
+
+    .confirm-box p {
+      font-size: 1.1rem;
+      margin-bottom: 20px;
+    }
+
+    .confirm-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .confirm-buttons button {
+      padding: 8px 24px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    #btn-confirm-yes { background: #e94560; color: #fff; }
+    #btn-confirm-no { background: #333; color: #fff; }
+
+    /* Feed de guesses */
+    #guess-feed {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 240px;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 50;
+    }
+
+    .guess-item {
+      padding: 4px 10px;
+      margin-bottom: 3px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    .guess-item .user { font-weight: 600; color: #e94560; }
+    .guess-item .country { color: #ccc; }
+    .guess-item .points { color: #4ecdc4; font-weight: 600; }
+
+    /* ========== PANTALLA FINAL ========== */
+    #end-screen {
+      display: none;
+      flex: 1;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .end-box {
+      background: #1a1a2e;
+      border: 2px solid #e94560;
+      border-radius: 16px;
+      padding: 40px 48px;
+      width: 500px;
+      text-align: center;
+    }
+
+    .end-box h1 {
+      font-size: 1.8rem;
+      color: #e94560;
+      margin-bottom: 6px;
+    }
+
+    .end-box .end-subtitle {
+      color: #777;
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+    }
+
+    #ranking-list {
+      text-align: left;
+      margin-bottom: 24px;
+    }
+
+    .ranking-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+      font-size: 0.95rem;
+    }
+
+    .ranking-item:nth-child(1) { background: rgba(233, 69, 96, 0.2); color: #e94560; font-weight: 700; }
+    .ranking-item:nth-child(2) { background: rgba(233, 160, 69, 0.15); color: #e9a045; font-weight: 600; }
+    .ranking-item:nth-child(3) { background: rgba(15, 52, 96, 0.3); color: #5b9bd5; font-weight: 600; }
+    .ranking-item:nth-child(n+4) { background: rgba(255,255,255,0.03); color: #aaa; }
+
+    .ranking-pos { margin-right: 10px; }
+    .ranking-user { flex: 1; }
+    .ranking-score { font-variant-numeric: tabular-nums; }
+
+    #btn-play-again {
+      background: #e94560;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PANTALLA 1: SETUP -->
+  <div id="setup-screen">
+    <div class="setup-box">
+      <h1>PanoChat</h1>
+      <p class="subtitle">El chat adivina el pais en Street View</p>
+
+      <div class="setup-group">
+        <label>Canal de Twitch</label>
+        <input type="text" id="input-channel" placeholder="nombre_del_canal" autocomplete="off">
+      </div>
+
+      <div id="twitch-status"></div>
+
+      <button id="btn-connect" class="btn-primary">Conectar al chat</button>
+
+      <hr class="separator">
+
+      <div class="setup-row">
+        <div class="setup-group">
+          <label>Rondas</label>
+          <select id="input-rounds">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="15">15</option>
+          </select>
+        </div>
+        <div class="setup-group">
+          <label>Segundos por ronda</label>
+          <select id="input-duration">
+            <option value="30">30</option>
+            <option value="45">45</option>
+            <option value="60" selected>60</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="command-info">El chat escribe el nombre del pais directamente</p>
+
+      <button id="btn-start-game" class="btn-primary" disabled>Iniciar partida</button>
+    </div>
+  </div>
+
+  <!-- PANTALLA 2: JUEGO -->
+  <div id="game-screen">
+    <div id="top-bar">
+      <h1>PanoChat</h1>
+      <span id="round-info"></span>
+      <div id="timer">--</div>
+    </div>
+
+    <div id="street-view-container">
+      <div id="map-overlay"></div>
+      <div id="cam-blocker">
+        <span class="cam-label">CAM</span>
+      </div>
+      <div id="bottom-blocker"></div>
+      <div id="confirm-overlay">
+        <div class="confirm-box">
+          <p>Terminar la partida?</p>
+          <div class="confirm-buttons">
+            <button id="btn-confirm-yes">Si, terminar</button>
+            <button id="btn-confirm-no">Cancelar</button>
+          </div>
+        </div>
+      </div>
+      <div id="guess-feed"></div>
+      <div id="result-panel">
+        <div class="result-body">
+          <div class="result-left">
+            <h2>El pais era:</h2>
+            <div id="result-country"></div>
+            <div id="result-winners"></div>
+            <div id="result-stats"></div>
+            <div id="result-next-info"></div>
+            <button id="btn-next-modal">Siguiente ronda</button>
+          </div>
+          <div class="result-right" id="result-map"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="controls">
+      <button id="btn-skip" disabled>Saltar (sin SV)</button>
+      <button id="btn-stop">Detener partida</button>
+      <span id="guesses-count"></span>
+    </div>
+  </div>
+
+  <!-- PANTALLA 3: FINAL -->
+  <div id="end-screen">
+    <div class="end-box">
+      <h1>Partida terminada</h1>
+      <p class="end-subtitle" id="end-subtitle"></p>
+      <div id="ranking-list"></div>
+      <button id="btn-play-again" class="btn-primary">Jugar de nuevo</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    // === ELEMENTOS ===
+    // Setup
+    const setupScreen = document.getElementById('setup-screen');
+    const inputChannel = document.getElementById('input-channel');
+    const inputRounds = document.getElementById('input-rounds');
+    const inputDuration = document.getElementById('input-duration');
+    const twitchStatus = document.getElementById('twitch-status');
+    const btnConnect = document.getElementById('btn-connect');
+    const btnStartGame = document.getElementById('btn-start-game');
+
+    // Game
+    const gameScreen = document.getElementById('game-screen');
+    const timerEl = document.getElementById('timer');
+    const roundInfoEl = document.getElementById('round-info');
+    const containerEl = document.getElementById('street-view-container');
+    const resultPanel = document.getElementById('result-panel');
+    const resultCountry = document.getElementById('result-country');
+    const resultWinners = document.getElementById('result-winners');
+    const resultStats = document.getElementById('result-stats');
+    const resultNextInfo = document.getElementById('result-next-info');
+    const guessFeed = document.getElementById('guess-feed');
+    const camBlocker = document.getElementById('cam-blocker');
+    const bottomBlocker = document.getElementById('bottom-blocker');
+    const mapOverlay = document.getElementById('map-overlay');
+    const guessesCount = document.getElementById('guesses-count');
+
+    const btnNextModal = document.getElementById('btn-next-modal');
+    const btnSkip = document.getElementById('btn-skip');
+    const btnStop = document.getElementById('btn-stop');
+
+    const endScreen = document.getElementById('end-screen');
+    const endSubtitle = document.getElementById('end-subtitle');
+    const rankingList = document.getElementById('ranking-list');
+    const btnPlayAgain = document.getElementById('btn-play-again');
+
+    let currentIframe = null;
+    let totalGuesses = 0;
+    let twitchConnected = false;
+
+    // === SONIDOS ===
+    const sndPop = new Audio('/sounds/correct.mp3');
+    const sndCountdown = new Audio('/sounds/countdown.mp3');
+    const sndRoundEnd = new Audio('/sounds/round-end.mp3');
+    const sndGameEnd = new Audio('/sounds/game-end.mp3');
+    sndPop.volume = 0.3;
+    sndCountdown.volume = 0.4;
+    sndRoundEnd.volume = 0.85;
+    sndGameEnd.volume = 0.3;
+
+    // === PANTALLA SETUP ===
+    btnConnect.addEventListener('click', () => {
+      const channel = inputChannel.value.trim();
+      if (!channel) {
+        twitchStatus.textContent = 'Escribe un nombre de canal';
+        twitchStatus.className = 'error';
+        return;
+      }
+      twitchStatus.textContent = 'Conectando...';
+      twitchStatus.className = 'connecting';
+      btnConnect.disabled = true;
+      socket.emit('twitch:connect', { channel });
+    });
+
+    inputChannel.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') btnConnect.click();
+    });
+
+    socket.on('twitch:connected', (data) => {
+      twitchStatus.textContent = `Conectado a #${data.channel}`;
+      twitchStatus.className = 'connected';
+      twitchConnected = true;
+      btnConnect.disabled = false;
+      btnStartGame.disabled = false;
+    });
+
+    socket.on('twitch:error', (data) => {
+      twitchStatus.textContent = `Error: ${data.message}`;
+      twitchStatus.className = 'error';
+      btnConnect.disabled = false;
+    });
+
+    btnStartGame.addEventListener('click', () => {
+      if (!twitchConnected) return;
+
+      socket.emit('game:configure', {
+        maxRounds: parseInt(inputRounds.value) || 10,
+        roundDuration: parseInt(inputDuration.value) || 60
+      });
+
+      socket.emit('game:start');
+    });
+
+    // === PANTALLA JUEGO ===
+    socket.on('game:started', () => {
+      showScreen('game');
+    });
+
+    socket.on('round:start', (data) => {
+      totalGuesses = 0;
+      guessesCount.textContent = '';
+      guessFeed.innerHTML = '';
+      resultPanel.style.display = 'none';
+
+      camBlocker.style.display = 'block';
+      bottomBlocker.style.display = 'block';
+      mapOverlay.style.display = 'none';
+
+      if (currentIframe) currentIframe.remove();
+      currentIframe = document.createElement('iframe');
+      currentIframe.src = `https://maps.google.com/maps?q=&layer=c&cbll=${data.lat},${data.lng}&cbp=12,0,0,0,0&output=svembed&z=14`;
+      currentIframe.allow = 'accelerometer; gyroscope';
+      containerEl.appendChild(currentIframe);
+
+      roundInfoEl.textContent = `Ronda ${data.roundNumber} / ${data.maxRounds}`;
+      btnSkip.disabled = false;
+      btnStop.disabled = false;
+    });
+
+    socket.on('round:tick', (data) => {
+      timerEl.textContent = data.secondsLeft;
+      timerEl.className = '';
+      if (data.secondsLeft <= 10) timerEl.classList.add('danger');
+      else if (data.secondsLeft <= 20) timerEl.classList.add('warning');
+
+      // Tick de countdown en los ultimos 5 segundos
+      if (data.secondsLeft <= 5 && data.secondsLeft > 0) {
+        sndCountdown.currentTime = 0;
+        sndCountdown.play().catch(() => {});
+      }
+    });
+
+    socket.on('round:guess', (data) => {
+      totalGuesses++;
+      guessesCount.textContent = `${totalGuesses} respuestas`;
+
+      // Pop de confirmacion: alguien escribio un pais valido
+      sndPop.currentTime = 0;
+      sndPop.play().catch(() => {});
+
+      const item = document.createElement('div');
+      item.className = 'guess-item';
+      item.innerHTML = `<span class="user">${esc(data.user)}</span> <span class="country">${esc(data.country)}</span>`;
+      guessFeed.prepend(item);
+
+      while (guessFeed.children.length > 30) guessFeed.lastChild.remove();
+    });
+
+    socket.on('round:end', (data) => {
+      timerEl.textContent = '00';
+      timerEl.className = '';
+      btnSkip.disabled = true;
+      mapOverlay.style.display = 'block';
+
+      // Sonido de fin de ronda
+      sndRoundEnd.currentTime = 0;
+      sndRoundEnd.play().catch(() => {});
+
+      // Mapa dentro del modal de resultado
+      const resultMap = document.getElementById('result-map');
+      resultMap.innerHTML = `<iframe src="https://maps.google.com/maps?q=${data.lat},${data.lng}&z=4&output=embed" allow="accelerometer; gyroscope"></iframe>`;
+
+      resultCountry.textContent = data.correctName;
+
+      if (data.winners.length > 0) {
+        const list = data.winners.slice(0, 10).map(w => `${esc(w.user)} (+${w.points})`).join(', ');
+        resultWinners.textContent = `Ganadores: ${list}`;
+        if (data.winners.length > 10) {
+          resultWinners.textContent += ` (+${data.winners.length - 10} mas)`;
+        }
+      } else {
+        resultWinners.textContent = 'Nadie acerto';
+      }
+
+      resultStats.textContent = `${data.totalGuesses} respuestas totales`;
+
+      const nextLabel = data.isLastRound ? 'Ver resultados' : 'Siguiente ronda';
+
+      resultPanel.style.display = 'block';
+      btnNextModal.style.display = 'inline-block';
+      btnNextModal.disabled = true;
+      btnNextModal.style.opacity = '0.5';
+      btnNextModal.style.cursor = 'not-allowed';
+
+      // Cuenta regresiva dentro del boton
+      resultNextInfo.textContent = '';
+      let countdown = 5;
+      btnNextModal.textContent = countdown;
+
+      const countdownInterval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          btnNextModal.textContent = countdown;
+        } else {
+          clearInterval(countdownInterval);
+          btnNextModal.textContent = nextLabel;
+          btnNextModal.disabled = false;
+          btnNextModal.style.opacity = '1';
+          btnNextModal.style.cursor = 'pointer';
+        }
+      }, 1000);
+    });
+
+    socket.on('round:skipped', () => {
+      // El skip dispara un nuevo round:start automaticamente
+    });
+
+    // Siguiente ronda: el streamer decide cuando
+    btnNextModal.addEventListener('click', () => {
+      btnNextModal.style.display = 'none';
+      resultPanel.style.display = 'none';
+      socket.emit('game:next');
+    });
+
+    btnSkip.addEventListener('click', () => {
+      socket.emit('game:skip');
+      btnSkip.disabled = true;
+    });
+
+    const confirmOverlay = document.getElementById('confirm-overlay');
+    const btnConfirmYes = document.getElementById('btn-confirm-yes');
+    const btnConfirmNo = document.getElementById('btn-confirm-no');
+
+    btnStop.addEventListener('click', () => {
+      socket.emit('game:pause');
+      confirmOverlay.classList.add('active');
+    });
+
+    btnConfirmYes.addEventListener('click', () => {
+      confirmOverlay.classList.remove('active');
+      socket.emit('game:stop');
+    });
+
+    btnConfirmNo.addEventListener('click', () => {
+      confirmOverlay.classList.remove('active');
+      socket.emit('game:resume');
+    });
+
+    socket.on('game:stopped', () => {
+      showScreen('setup');
+      timerEl.textContent = '--';
+    });
+
+    // === PANTALLA FINAL ===
+    socket.on('game:ended', (data) => {
+      sndGameEnd.currentTime = 0;
+      sndGameEnd.play().catch(() => {});
+      endSubtitle.textContent = `${data.totalRounds} rondas jugadas`;
+
+      rankingList.innerHTML = '';
+      if (data.ranking.length === 0) {
+        rankingList.innerHTML = '<p style="color:#777;text-align:center;">Nadie participo</p>';
+      } else {
+        data.ranking.forEach((entry, i) => {
+          const item = document.createElement('div');
+          item.className = 'ranking-item';
+          item.innerHTML = `
+            <span class="ranking-pos">#${i + 1}</span>
+            <span class="ranking-user">${esc(entry.user)}</span>
+            <span class="ranking-score">${entry.points} pts (${entry.correct}/${entry.total})</span>
+          `;
+          rankingList.appendChild(item);
+        });
+      }
+
+      showScreen('end');
+    });
+
+    btnPlayAgain.addEventListener('click', () => {
+      showScreen('setup');
+    });
+
+    // === UTILIDADES ===
+    function showScreen(name) {
+      setupScreen.style.display = name === 'setup' ? 'flex' : 'none';
+      gameScreen.style.display = name === 'game' ? 'flex' : 'none';
+      endScreen.style.display = name === 'end' ? 'flex' : 'none';
+    }
+
+    function esc(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
