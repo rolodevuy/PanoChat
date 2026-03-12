@@ -271,6 +271,7 @@
     button:disabled { opacity: 0.4; cursor: not-allowed; }
 
     #btn-skip { background: #e9a045; color: #0f0f0f; }
+    #btn-end-round { background: #4ecdc4; color: #0f0f0f; }
     #btn-stop { background: #444; color: #fff; }
 
     #guesses-count {
@@ -563,6 +564,7 @@
 
     <div id="controls">
       <button id="btn-skip" disabled>Saltar (sin SV)</button>
+      <button id="btn-end-round" disabled>Finalizar ronda</button>
       <button id="btn-stop">Detener partida</button>
       <span id="guesses-count"></span>
     </div>
@@ -610,6 +612,7 @@
 
     const btnNextModal = document.getElementById('btn-next-modal');
     const btnSkip = document.getElementById('btn-skip');
+    const btnEndRound = document.getElementById('btn-end-round');
     const btnStop = document.getElementById('btn-stop');
 
     const endScreen = document.getElementById('end-screen');
@@ -629,7 +632,7 @@
     sndPop.volume = 0.3;
     sndCountdown.volume = 0.4;
     sndRoundEnd.volume = 0.85;
-    sndGameEnd.volume = 0.3;
+    sndGameEnd.volume = 0.2;
 
     // === PANTALLA SETUP ===
     btnConnect.addEventListener('click', () => {
@@ -697,6 +700,7 @@
 
       roundInfoEl.textContent = `Ronda ${data.roundNumber} / ${data.maxRounds}`;
       btnSkip.disabled = false;
+      btnEndRound.disabled = false;
       btnStop.disabled = false;
     });
 
@@ -733,6 +737,7 @@
       timerEl.textContent = '00';
       timerEl.className = '';
       btnSkip.disabled = true;
+      btnEndRound.disabled = true;
       mapOverlay.style.display = 'block';
 
       // Sonido de fin de ronda
@@ -743,7 +748,7 @@
       const resultMap = document.getElementById('result-map');
       resultMap.innerHTML = `<iframe src="https://maps.google.com/maps?q=${data.lat},${data.lng}&z=4&output=embed" allow="accelerometer; gyroscope"></iframe>`;
 
-      resultCountry.textContent = data.correctName;
+      resultCountry.textContent = `${countryFlag(data.correctCountry)} ${data.correctName}`;
 
       if (data.winners.length > 0) {
         const list = data.winners.slice(0, 10).map(w => `${esc(w.user)} (+${w.points})`).join(', ');
@@ -798,6 +803,11 @@
     btnSkip.addEventListener('click', () => {
       socket.emit('game:skip');
       btnSkip.disabled = true;
+    });
+
+    btnEndRound.addEventListener('click', () => {
+      socket.emit('game:end-round');
+      btnEndRound.disabled = true;
     });
 
     const confirmOverlay = document.getElementById('confirm-overlay');
@@ -864,6 +874,22 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    // Bandera emoji desde codigo ISO
+    const specialFlags = {
+      'EN': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}',
+      'SC': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}',
+      'WL': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}',
+      'XN': '\u{1F1EC}\u{1F1E7}',
+      'XK': '\u{1F1FD}\u{1F1F0}'
+    };
+    function countryFlag(code) {
+      if (specialFlags[code]) return specialFlags[code];
+      if (!code || code.length !== 2) return '';
+      return String.fromCodePoint(
+        ...[...code.toUpperCase()].map(c => 0x1F1E6 + c.charCodeAt(0) - 65)
+      );
     }
   </script>
 </body>

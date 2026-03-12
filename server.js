@@ -110,6 +110,11 @@ io.on('connection', (socket) => {
     game.nextRound();
   });
 
+  // Finalizar ronda antes de tiempo
+  socket.on('game:end-round', () => {
+    game.endRound();
+  });
+
   // Saltar lugar sin Street View
   socket.on('game:skip', () => {
     game.skipRound();
