@@ -748,7 +748,7 @@
       const resultMap = document.getElementById('result-map');
       resultMap.innerHTML = `<iframe src="https://maps.google.com/maps?q=${data.lat},${data.lng}&z=4&output=embed" allow="accelerometer; gyroscope"></iframe>`;
 
-      resultCountry.textContent = `${countryFlag(data.correctCountry)} ${data.correctName}`;
+      resultCountry.innerHTML = `${countryFlagImg(data.correctCountry)} ${esc(data.correctName)}`;
 
       if (data.winners.length > 0) {
         const list = data.winners.slice(0, 10).map(w => `${esc(w.user)} (+${w.points})`).join(', ');
@@ -876,20 +876,15 @@
       return div.innerHTML;
     }
 
-    // Bandera emoji desde codigo ISO
-    const specialFlags = {
-      'EN': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}',
-      'SC': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}',
-      'WL': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}',
-      'XN': '\u{1F1EC}\u{1F1E7}',
-      'XK': '\u{1F1FD}\u{1F1F0}'
+    // Bandera como imagen desde CDN (los emojis no funcionan en Windows)
+    const flagCodeMap = {
+      'EN': 'gb-eng', 'SC': 'gb-sct', 'WL': 'gb-wls', 'XN': 'gb-nir', 'XK': 'xk'
     };
-    function countryFlag(code) {
-      if (specialFlags[code]) return specialFlags[code];
-      if (!code || code.length !== 2) return '';
-      return String.fromCodePoint(
-        ...[...code.toUpperCase()].map(c => 0x1F1E6 + c.charCodeAt(0) - 65)
-      );
+    function countryFlagImg(code, size) {
+      if (!code) return '';
+      const s = size || 32;
+      const mapped = flagCodeMap[code] || code.toLowerCase();
+      return `<img src="https://flagcdn.com/${s}x${Math.round(s*0.75)}/${mapped}.png" alt="${code}" style="vertical-align:middle;margin-right:8px;" onerror="this.style.display='none'">`;
     }
   </script>
 </body>
