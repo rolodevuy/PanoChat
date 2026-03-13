@@ -2,24 +2,17 @@ const tmi = require('tmi.js');
 const config = require('../config/gameConfig');
 
 class ChatListener {
-  constructor(game) {
+  constructor(game, channel) {
     this.game = game;
+    this.channel = channel;
     this.client = null;
   }
 
   connect() {
     const opts = {
       options: { debug: false },
-      channels: [config.TWITCH_CHANNEL]
+      channels: [this.channel]
     };
-
-    // Solo agregar identity si hay token (sino conecta como anonimo)
-    if (config.TWITCH_OAUTH_TOKEN) {
-      opts.identity = {
-        username: config.TWITCH_BOT_USERNAME,
-        password: config.TWITCH_OAUTH_TOKEN
-      };
-    }
 
     this.client = new tmi.Client(opts);
 
@@ -29,11 +22,11 @@ class ChatListener {
     });
 
     this.client.on('connected', () => {
-      console.log(`[Bot] Conectado a #${config.TWITCH_CHANNEL}`);
+      console.log(`[Bot] Conectado a #${this.channel}`);
     });
 
     this.client.on('disconnected', (reason) => {
-      console.log(`[Bot] Desconectado: ${reason}`);
+      console.log(`[Bot] #${this.channel} desconectado: ${reason}`);
     });
 
     return this.client.connect();
