@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); countries=set\\(e[''''country''''] for e in d\\); print\\(f''''Total entries: {len\\(d\\)}''''\\); print\\(f''''Unique countries: {len\\(countries\\)}''''\\); from collections import Counter; c=Counter\\(e[''''country''''] for e in d\\); print\\(''''Distribution:''''\\); [print\\(f''''  {k}: {v}''''\\) for k,v in c.most_common\\(\\)]\")",
+      "Bash(node -e \"const p = require\\(''C:/xampp/htdocs/panoChat/data/places.json''\\); console.log\\(''Total:'', p.length\\); const countries = [...new Set\\(p.map\\(x=>x.country\\)\\)]; console.log\\(''Paises:'', countries.length\\); console.log\\(countries.sort\\(\\).join\\('', ''\\)\\);\")",
+      "Bash(npm install:*)",
+      "Bash(timeout 5 node server.js)",
+      "WebSearch",
+      "WebFetch(domain:www.mapillary.com)",
+      "Bash(npx kill-port:*)",
+      "Bash(taskkill //F //FI 'WINDOWTITLE eq node*')",
+      "Bash(fuser -k 3000/tcp)",
+      "Bash(netstat -ano)",
+      "Bash(timeout 4 node server.js)",
+      "Bash(node -e \"const d=require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\); const bl=JSON.parse\\(d\\); console.log\\(''''Blacklisted:'''', bl.length\\);\")",
+      "Bash(node -e \"const p=require\\(''C:/xampp/htdocs/panoChat/data/places.json''\\); console.log\\(''Total places:'', p.length\\); const countries=new Set\\(p.map\\(x=>x.country\\)\\); console.log\\(''Unique countries:'', countries.size\\); const dupes=p.filter\\(\\(a,i\\)=>p.findIndex\\(b=>b.lat===a.lat&&b.lng===a.lng\\)!==i\\); console.log\\(''Duplicate coords:'', dupes.length\\);\")",
+      "Bash(node -e \"const p=require\\(''C:/xampp/htdocs/panoChat/data/places.json''\\); console.log\\(''Total:'', p.length\\); const dupes=p.filter\\(\\(a,i\\)=>p.findIndex\\(b=>b.lat===a.lat&&b.lng===a.lng\\)!==i\\); console.log\\(''Duplicados:'', dupes.length\\); if\\(dupes.length>0\\) dupes.forEach\\(d=>console.log\\(d.lat,d.lng,d.country\\)\\);\")",
+      "Bash(node -e \":*)",
+      "Bash(git init:*)",
+      "WebFetch(domain:panochat-production.up.railway.app)",
+      "Bash(node -e \"const d = require\\(''./data/places.json''\\); console.log\\(''Total entries:'', d.length\\); console.log\\(''Valid JSON: yes''\\); const dupes = []; for\\(let i=0;i<d.length;i++\\) for\\(let j=i+1;j<d.length;j++\\) if\\(d[i].lat===d[j].lat && d[i].lng===d[j].lng\\) dupes.push\\([i+1,j+1,d[i]]\\); console.log\\(''Duplicate coords:'', dupes.length\\); if\\(dupes.length\\) dupes.forEach\\(d=>console.log\\(d\\)\\);\")"
+    ]
+  }
+}
