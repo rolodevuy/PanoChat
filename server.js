@@ -5,6 +5,7 @@ const path = require('path');
 const config = require('./config/gameConfig');
 const { Game } = require('./core/game');
 const ChatListener = require('./bot/chatListener');
+const countriesData = require('./data/countries.json');
 
 const app = express();
 const server = http.createServer(app);
@@ -175,6 +176,26 @@ io.on('connection', (socket) => {
   socket.on('game:resume', () => {
     const game = getGame();
     if (game) game.resume();
+  });
+
+  // Respuesta del streamer (no pasa por Twitch)
+  socket.on('game:streamer-guess', (data) => {
+    const game = getGame();
+    if (!game || !socket.channel) return;
+    const guess = (data.guess || '').trim();
+    if (!guess) return;
+
+    const streamerUser = socket.channel; // el nombre del canal como username
+    const result = game.submitGuess(streamerUser, guess);
+
+    if (result === null) {
+      // Ya respondio o pais no reconocido
+      socket.emit('streamer:feedback', { message: 'No reconocido', correct: false });
+    } else if (result.correct) {
+      socket.emit('streamer:feedback', { message: `+${result.points} pts`, correct: true });
+    } else {
+      socket.emit('streamer:feedback', { message: countriesData.names[result.countryCode] || result.countryCode, correct: false });
+    }
   });
 
   // Forzar fin de partida

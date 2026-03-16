@@ -197,14 +197,6 @@ class Game extends EventEmitter {
       return upperInput;
     }
 
-    const bestMatch = closest(normalized, this.aliasKeys);
-    if (bestMatch) {
-      const distance = levenshteinDistance(normalized, bestMatch);
-      if (distance <= config.FUZZY_THRESHOLD) {
-        return countriesData.aliases[bestMatch];
-      }
-    }
-
     return null;
   }
 

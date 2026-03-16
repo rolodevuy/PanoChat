@@ -226,7 +226,7 @@
 
     #cam-blocker .cam-label {
       position: absolute;
-      top: 50%;
+      top: 40%;
       left: 50%;
       transform: translate(-50%, -50%);
       font-size: 1rem;
@@ -235,6 +235,40 @@
       pointer-events: none;
       text-align: center;
       line-height: 1.4;
+    }
+
+    #streamer-guess-input {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      padding: 8px 12px;
+      border: 2px solid #16213e;
+      border-radius: 6px;
+      background: rgba(15, 15, 15, 0.8);
+      color: #fff;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #streamer-guess-input:focus {
+      border-color: #e94560;
+    }
+
+    #streamer-guess-input::placeholder {
+      color: #555;
+    }
+
+    #streamer-guess-feedback {
+      position: absolute;
+      bottom: 48px;
+      left: 12px;
+      right: 12px;
+      font-size: 0.8rem;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.3s;
     }
 
     #bottom-blocker {
@@ -535,6 +569,8 @@
       <div id="map-overlay"></div>
       <div id="cam-blocker">
         <span class="cam-label">CAM</span>
+        <div id="streamer-guess-feedback"></div>
+        <input type="text" id="streamer-guess-input" placeholder="Tu respuesta..." autocomplete="off">
       </div>
       <div id="bottom-blocker"></div>
       <div id="confirm-overlay">
@@ -620,9 +656,13 @@
     const rankingList = document.getElementById('ranking-list');
     const btnPlayAgain = document.getElementById('btn-play-again');
 
+    const streamerInput = document.getElementById('streamer-guess-input');
+    const streamerFeedback = document.getElementById('streamer-guess-feedback');
+
     let currentIframe = null;
     let totalGuesses = 0;
     let twitchConnected = false;
+    let streamerChannel = '';
 
     // === SONIDOS ===
     const sndPop = new Audio('/sounds/correct.mp3');
@@ -656,6 +696,7 @@
       twitchStatus.textContent = `Conectado a #${data.channel}`;
       twitchStatus.className = 'connected';
       twitchConnected = true;
+      streamerChannel = data.channel;
       btnConnect.disabled = false;
       btnStartGame.disabled = false;
     });
@@ -857,6 +898,23 @@
       }
 
       showScreen('end');
+    });
+
+    // === RESPUESTA DEL STREAMER (no pasa por Twitch) ===
+    streamerInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const guess = streamerInput.value.trim();
+        if (!guess) return;
+        socket.emit('game:streamer-guess', { guess });
+        streamerInput.value = '';
+      }
+    });
+
+    socket.on('streamer:feedback', (data) => {
+      streamerFeedback.textContent = data.message;
+      streamerFeedback.style.color = data.correct ? '#4ecdc4' : '#e94560';
+      streamerFeedback.style.opacity = '1';
+      setTimeout(() => { streamerFeedback.style.opacity = '0'; }, 2000);
     });
 
     btnPlayAgain.addEventListener('click', () => {
